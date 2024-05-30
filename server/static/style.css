@@ -1,0 +1,168 @@
+@font-face {
+  font-family: "bit5x3";
+  src:
+    url("fonts/bit5x3/bit5x3.woff2") format("woff2"),
+    url("fonts/bit5x3/bit5x3.woff") format("woff");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+* {
+  --accent-color-1: #4285f4;
+  --accent-color-2: #ea4335;
+  --accent-color-3: #fbbc05;
+  --accent-color-4: #34a853;
+
+  --foreground-color: white;
+  --background-color: black;
+  --ball-color: white;
+
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  font-family: "bit5x3";
+  font-weight: normal;
+  font-style: normal;
+  color: var(--foreground-color);
+}
+
+.board {
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--background-color);
+}
+
+.ball {
+  height: 30px;
+  width: 30px;
+  position: fixed;
+  background-color: var(--ball-color);
+  top: calc(50% - 15px);
+  left: calc(50% - 15px);
+}
+
+.paddle {
+  height: 100px;
+  width: 18px;
+  position: fixed;
+}
+
+.paddle-1 {
+  top: calc(0vh + 55px);
+  left: calc(0vw + 30px);
+  background-color: var(--accent-color-1);
+}
+
+.paddle-2 {
+  top: calc(100vh + 7.5vh - 100px - 55px);
+  right: calc(0vw + 30px);
+  background-color: var(--accent-color-2);
+}
+
+.header {
+  position: fixed;
+  top: 0;
+
+  width: 100%;
+  padding-top: 1em;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-name {
+  font-size: 3em;
+}
+
+.game-name span:nth-child(4n + 1) {
+  color: var(--accent-color-1);
+}
+
+.game-name span:nth-child(4n + 2) {
+  color: var(--accent-color-2);
+}
+
+.game-name span:nth-child(4n + 3) {
+  color: var(--accent-color-3);
+}
+
+.game-name span:nth-child(4n + 4) {
+  color: var(--accent-color-4);
+}
+
+.scoreboard {
+  margin-top: 1em;
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.player-score {
+  color: var(--foreground-color);
+}
+
+.message {
+  text-align: center;
+  width: 30vw;
+  margin-left: 1em;
+  margin-right: 1em;
+}
+
+.instructions {
+  position: fixed;
+  bottom: 0;
+
+  width: 100%;
+  padding: 2em;
+  padding-top: 0em;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.keymaps {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.keymap {
+  display: flex;
+  align-items: center;
+}
+
+.keymap:not(:first-child) {
+  margin-top: 0.5em;
+}
+
+.keymap-key {
+  width: 3em;
+  height: 3em;
+
+  border: 3px solid var(--foreground-color);
+  border-radius: 10px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.keymap-map {
+  margin-left: 0.75rem;
+  font-size: 1.25em;
+}
