@@ -1,40 +1,102 @@
-const paddle1 = document.querySelector('.paddle-1');
-const paddle2 = document.querySelector('.paddle-2');
+const paddle1Element = document.querySelector('.paddle-1');
+const paddle2Element = document.querySelector('.paddle-2');
 const board = document.querySelector('.board');
 const initialBall = document.querySelector('.ball');
 const ball = document.querySelector('.ball');
-const score1 = document.querySelector('.player-1-score');
-const score2 = document.querySelector('.player-2-score');
-const message = document.querySelector('.message');
+const score1Element = document.querySelector('.player-1-score');
+const score2Element = document.querySelector('.player-2-score');
+const messageElement = document.querySelector('.message');
 const initialBallCoord = ball.getBoundingClientRect();
 const boardCoord = board.getBoundingClientRect();
-const paddleCommon = document.querySelector('.paddle').getBoundingClientRect();
-// let roundState = 'start';
-// let paddle1Coord = paddle1.getBoundingClientRect();
-// let paddle2Coord = paddle2.getBoundingClientRect();
-// let ballCoord = initialBallCoord;
-// let dx = Math.floor(Math.random() * 4) + 3;
-// let dy = Math.floor(Math.random() * 4) + 3;
+const paddleCommon = paddle1Element.getBoundingClientRect();
+
+/* DOM Manipulation */
+const setGameMessage = (message) => {
+  messageElement.innerHTML = message;
+};
+
+const setPlayerScore = (playerId, score) => {
+  const scores = [score1Element, score2Element];
+  if (playerId === 1) {
+    score1Element.innerHTML = score;
+  } else {
+    score2Element.innerHTML = score;
+  }
+};
+
+const setBallPosition = (x, y) => {
+  ball.style.left = `${x}px`;
+  ball.style.top = `${y}px`;
+};
+
+const setPaddlePosition = (playerId, y) => {
+  const paddleElement = playerId === 1 ? paddle1Element : paddle2Element;
+  paddleElement.style.top = `${y}px`;
+};
+
+const renderState = (newState, oldState) => {
+  if (!oldState || newState.roundState !== oldState.roundState) {
+    if (newState.roundState === 'start') {
+      setGameMessage('Press Enter to Play Pong');
+    } else if (newState.roundState === 'playing') {
+      setGameMessage('Game Started');
+    } else {
+      throw new Error(`Invalid round state: ${newState.roundState}`);
+    }
+  }
+
+  if (
+    !oldState ||
+    newState.paddleCoords[0].top !== oldState.paddleCoords[0].top
+  ) {
+    setPaddlePosition(1, newState.paddleCoords[0].top);
+  }
+  if (
+    !oldState ||
+    newState.paddleCoords[1].top !== oldState.paddleCoords[1].top
+  ) {
+    setPaddlePosition(2, newState.paddlecoords[1].top);
+  }
+
+  if (!oldState || newState.ballCoord !== oldState.ballCoord) {
+    setBallPosition(newState.ballCoord.x, newState.ballCoord.y);
+  }
+
+  if (!oldState || newState.scores[0] !== oldState.scores[0]) {
+    setPlayerScore(1, newState.scores[0]);
+  }
+  if (!oldState || newState.scores[1] !== oldState.scores[1]) {
+    setPlayerScore(2, newState.scores[1]);
+  }
+};
 
 /* Round State Logic */
 const generateRandomSpeed = () => Math.floor(Math.random() * 4) + 3;
 
 const getOriginalGameState = () => {
+  console.log(initialBallCoord);
+  console.log(window.screen);
   return {
     roundState: 'start', // 'start' | 'playing'
     paddleCoords: [
-      paddle1.getBoundingClientRect(),
-      paddle2.getBoundingClientRect(),
+      paddle1Element.getBoundingClientRect(),
+      paddle2Element.getBoundingClientRect(),
     ],
     ballCoord: initialBallCoord,
-    ballSpeed: {
-      x: generateRandomSpeed(),
-      y: generateRandomSpeed(),
-    },
+    scores: [0, 0],
   };
 };
 
-const gameState = getOriginalGameState();
+let gameState = getOriginalGameState();
+
+const updateGameState = (newPartialGameState) => {
+  const newGameState = {
+    ...gameState,
+    ...newPartialGameState,
+  };
+  renderState(newGameState, gameState);
+  gameState = newGameState;
+};
 
 /* WebSocket Logic */
 const webSocket = new WebSocket('wss://echo.websocket.org/.hehe');
@@ -106,62 +168,63 @@ const setRoomCode = (roomCode) => {
 /* Game Logic */
 document.addEventListener('keydown', (e) => {
   if (e.key == 'Enter') {
-    roundState = roundState == 'start' ? 'playing' : 'start';
-    if (roundState == 'playing') {
-      message.innerHTML = 'Game Started';
-      message.style.left = 42 + 'vw';
+    gameState.roundState =
+      gameState.roundState == 'start' ? 'playing' : 'start';
+    if (gameState.roundState == 'playing') {
+      setGameMessage('Game Started');
       requestAnimationFrame(() => {
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-        moveBall(dx, dy);
+        const initialBallSpeedY = generateRandomSpeed();
+        const initialBallSpeedX = generateRandomSpeed();
+        moveBall(initialBallSpeedX, initialBallSpeedY);
       });
     }
   }
-  if (roundState == 'playing') {
+  if (gameState.roundState == 'playing') {
     if (e.key == 'w') {
-      paddle1.style.top =
-        Math.max(boardCoord.top, paddle1Coord.top - window.innerHeight * 0.06) +
-        'px';
-      paddle1Coord = paddle1.getBoundingClientRect();
+      setPaddlePosition(
+        1,
+        Math.max(
+          boardCoord.top,
+          gameState.paddleCoords[0].top - window.innerHeight * 0.06,
+        ),
+      );
+      gameState.paddleCoords[0] = paddle1Element.getBoundingClientRect();
     }
     if (e.key == 's') {
-      paddle1.style.top =
+      setPaddlePosition(
+        1,
         Math.min(
           boardCoord.bottom - paddleCommon.height,
-          paddle1Coord.top + window.innerHeight * 0.06,
-        ) + 'px';
-      paddle1Coord = paddle1.getBoundingClientRect();
+          gameState.paddleCoords[0].top + window.innerHeight * 0.06,
+        ),
+      );
+      gameState.paddleCoords[0] = paddle1Element.getBoundingClientRect();
     }
 
     if (e.key == 'ArrowUp') {
-      paddle2.style.top =
-        Math.max(boardCoord.top, paddle2Coord.top - window.innerHeight * 0.1) +
-        'px';
-      paddle2Coord = paddle2.getBoundingClientRect();
+      setPaddlePosition(
+        2,
+        Math.max(
+          boardCoord.top,
+          gameState.paddleCoords[1].top - window.innerHeight * 0.1,
+        ),
+      );
+      gameState.paddleCoords[1] = paddle2Element.getBoundingClientRect();
     }
     if (e.key == 'ArrowDown') {
-      paddle2.style.top =
+      setPaddlePosition(
+        2,
         Math.min(
           boardCoord.bottom - paddleCommon.height,
-          paddle2Coord.top + window.innerHeight * 0.1,
-        ) + 'px';
-      paddle2Coord = paddle2.getBoundingClientRect();
+          gameState.paddleCoords[1].top + window.innerHeight * 0.1,
+        ),
+      );
+      gameState.paddleCoords[1] = paddle2Element.getBoundingClientRect();
     }
   }
 });
 
 /* Ball Movement Logic */
-
-const setPlayerScore = (playerId, score) => {
-  const scores = [score1, score2];
-  // scores[playerId - 1]?.innerHTML = score;
-  if (playerId === 1) {
-    score1.innerHTML = score;
-  } else {
-    score2.innerHTML = score;
-  }
-};
-
 function moveBall(dx, dy) {
   let yDown = dy > 0;
   let xRight = dx > 0;
@@ -169,27 +232,27 @@ function moveBall(dx, dy) {
   let absDY = Math.abs(dy);
 
   /* Vertical wall collisions */
-  if (ballCoord.top <= boardCoord.top) {
+  if (gameState.ballCoord.top <= boardCoord.top) {
     yDown = true;
   }
-  if (ballCoord.bottom >= boardCoord.bottom) {
+  if (gameState.ballCoord.bottom >= boardCoord.bottom) {
     yDown = false;
   }
 
   /* Paddle collisions */
   if (
-    ballCoord.left <= paddle1Coord.right &&
-    ballCoord.top >= paddle1Coord.top &&
-    ballCoord.bottom <= paddle1Coord.bottom
+    gameState.ballCoord.left <= gameState.paddleCoords[0].right &&
+    gameState.ballCoord.top >= gameState.paddleCoords[0].top &&
+    gameState.ballCoord.bottom <= gameState.paddleCoords[0].bottom
   ) {
     xRight = true;
     absDX = generateRandomSpeed();
     absDY = generateRandomSpeed();
   }
   if (
-    ballCoord.right >= paddle2Coord.left &&
-    ballCoord.top >= paddle2Coord.top &&
-    ballCoord.bottom <= paddle2Coord.bottom
+    gameState.ballCoord.right >= gameState.paddleCoords[1].left &&
+    gameState.ballCoord.top >= gameState.paddleCoords[1].top &&
+    gameState.ballCoord.bottom <= gameState.paddleCoords[1].bottom
   ) {
     xRight = false;
     absDX = generateRandomSpeed();
@@ -198,27 +261,47 @@ function moveBall(dx, dy) {
 
   /* Horizontal wall collisions */
   if (
-    ballCoord.left <= boardCoord.left ||
-    ballCoord.right >= boardCoord.right
+    gameState.ballCoord.left <= boardCoord.left ||
+    gameState.ballCoord.right >= boardCoord.right
   ) {
-    if (ballCoord.left <= boardCoord.left) {
-      setPlayerScore(2, +score2.innerHTML + 1);
+    if (gameState.ballCoord.left <= boardCoord.left) {
+      updateGameState({
+        scores: [gameState.scores[0], gameState.scores[1] + 1],
+      });
+      // gameState.scores[1] += 1;
+      // setPlayerScore(2, gameState.scores[1]);
     } else {
-      setPlayerScore(1, +score1.innerHTML + 1);
+      updateGameState({
+        scores: [gameState.scores[0] + 1, gameState.scores[1]],
+      });
+      // gameState.scores[0] += 1;
+      // setPlayerScore(1, gameState.scores[0]);
     }
-    roundState = 'start';
+    updateGameState({
+      roundState: 'start',
+      ballCoord: initialBallCoord,
+    });
+    // gameState.roundState = 'start';
 
-    ballCoord = initialBallCoord;
-    ball.style = initialBall.style;
-    message.innerHTML = 'Press Enter to Play Pong';
+    // gameState.ballCoord = initialBallCoord;
+    // setBallPosition(initialBall.style.left, initialBall.style.top);
+    // setGameMessage('Press Enter to Play Pong');
     return;
   }
 
   const newDX = xRight ? absDX : -absDX;
   const newDY = yDown ? absDY : -absDY;
-  ball.style.left = ballCoord.left + newDX + 'px';
-  ball.style.top = ballCoord.top + newDY + 'px';
-  ballCoord = ball.getBoundingClientRect();
+  setBallPosition(
+    gameState.ballCoord.left + newDX,
+    gameState.ballCoord.top + newDY,
+  );
+  gameState.ballCoord = ball.getBoundingClientRect();
+  // updateGameState({
+  //   ballCoord: {
+  //     x: gameState.ballCoord.left + newDX,
+  //     y: gameState.ballCoord.top + newDY,
+  //   },
+  // });
   requestAnimationFrame(() => {
     moveBall(newDX, newDY);
   });
