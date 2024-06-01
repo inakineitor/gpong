@@ -38,40 +38,24 @@ body {
   overflow: hidden;
 }
 
-.board {
-  height: 100vh;
-  width: 100vw;
+#board {
+  /* height: 100vh; */
+  /* width: 100vw; */
+
   background-color: var(--background-color);
+  border: 3px solid var(--foreground-color);
+  border-radius: 10px;
 }
 
-.ball {
-  height: 30px;
-  width: 30px;
-  position: fixed;
-  background-color: var(--ball-color);
-  top: calc(50% - 15px);
-  left: calc(50% - 15px);
+#offline-background {
+  position: absolute;
+  transform: rotate(-45deg);
+  width: 1000vw;
+  height: 1000vh;
+  z-index: -1;
 }
 
-.paddle {
-  height: 100px;
-  width: 18px;
-  position: fixed;
-}
-
-.paddle-1 {
-  top: calc(0vh + 55px);
-  left: calc(0vw + 30px);
-  background-color: var(--accent-color-1);
-}
-
-.paddle-2 {
-  top: calc(100vh + 7.5vh - 100px - 55px);
-  right: calc(0vw + 30px);
-  background-color: var(--accent-color-2);
-}
-
-.header {
+#header {
   position: fixed;
   top: 0;
 
@@ -83,27 +67,27 @@ body {
   align-items: center;
 }
 
-.game-name {
+#game-name {
   font-size: 3em;
 }
 
-.game-name span:nth-child(4n + 1) {
+#game-name span:nth-child(4n + 1) {
   color: var(--accent-color-1);
 }
 
-.game-name span:nth-child(4n + 2) {
+#game-name span:nth-child(4n + 2) {
   color: var(--accent-color-2);
 }
 
-.game-name span:nth-child(4n + 3) {
+#game-name span:nth-child(4n + 3) {
   color: var(--accent-color-3);
 }
 
-.game-name span:nth-child(4n + 4) {
+#game-name span:nth-child(4n + 4) {
   color: var(--accent-color-4);
 }
 
-.scoreboard {
+#scoreboard {
   margin-top: 1em;
 
   display: flex;
@@ -122,7 +106,7 @@ body {
   margin-right: 1em;
 }
 
-.instructions {
+#instructions {
   position: fixed;
   bottom: 0;
 

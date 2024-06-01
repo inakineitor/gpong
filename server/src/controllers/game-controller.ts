@@ -91,6 +91,7 @@ class GameState {
     },
     isResetting: false,
   };
+  engine = 'server';
 
   constructor(leftPlayerId?: string) {
     this.paddles.left.playerId = leftPlayerId;
@@ -256,6 +257,9 @@ export default async function gameController(fastify: FastifyInstance) {
         if (playerAssignment.isErr()) {
           reply.code(400).send({
             error: 'Room is full',
+            roomId,
+            playerAssignment: null,
+            engine: 'server',
           });
           return;
         }
@@ -263,6 +267,7 @@ export default async function gameController(fastify: FastifyInstance) {
           playerId,
           roomId,
           playerAssignment: playerAssignment.unwrapOr(null),
+          engine: 'server',
         });
         roomIdToState[roomId].start();
         return;
@@ -274,6 +279,7 @@ export default async function gameController(fastify: FastifyInstance) {
         playerId,
         roomId,
         playerAssignment: 'left',
+        enginer: 'server',
       });
     },
   );
