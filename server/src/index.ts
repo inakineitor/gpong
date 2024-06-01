@@ -8,4 +8,4 @@ console.log(
   `🚀  Fastify server running on port http://localhost:${FASTIFY_PORT}`,
 );
 console.log(`Route index: /`);
-console.log(`Route user: /api/v1/user`);
+console.log(`Route game: /game`);

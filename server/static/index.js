@@ -10,6 +10,8 @@ const initialBallCoord = ball.getBoundingClientRect();
 const boardCoord = board.getBoundingClientRect();
 const paddleCommon = paddle1Element.getBoundingClientRect();
 
+const paddleWidth = paddleCommon.width;
+
 /* DOM Manipulation */
 const setGameMessage = (message) => {
   messageElement.innerHTML = message;
@@ -268,24 +270,15 @@ function moveBall(dx, dy) {
       updateGameState({
         scores: [gameState.scores[0], gameState.scores[1] + 1],
       });
-      // gameState.scores[1] += 1;
-      // setPlayerScore(2, gameState.scores[1]);
     } else {
       updateGameState({
         scores: [gameState.scores[0] + 1, gameState.scores[1]],
       });
-      // gameState.scores[0] += 1;
-      // setPlayerScore(1, gameState.scores[0]);
     }
     updateGameState({
       roundState: 'start',
       ballCoord: initialBallCoord,
     });
-    // gameState.roundState = 'start';
-
-    // gameState.ballCoord = initialBallCoord;
-    // setBallPosition(initialBall.style.left, initialBall.style.top);
-    // setGameMessage('Press Enter to Play Pong');
     return;
   }
 
@@ -296,12 +289,6 @@ function moveBall(dx, dy) {
     gameState.ballCoord.top + newDY,
   );
   gameState.ballCoord = ball.getBoundingClientRect();
-  // updateGameState({
-  //   ballCoord: {
-  //     x: gameState.ballCoord.left + newDX,
-  //     y: gameState.ballCoord.top + newDY,
-  //   },
-  // });
   requestAnimationFrame(() => {
     moveBall(newDX, newDY);
   });
