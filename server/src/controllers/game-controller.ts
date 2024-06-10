@@ -249,89 +249,9 @@ export default async function gameController(fastify: FastifyInstance) {
   // GET /api/v1/user
   fastify.get('/', async function (_request, reply) {
     reply.send({
-      balance: '$3,277.32',
-      picture: 'http://placehold.it/32x32',
-      age: 30,
-      name: 'Leonor Cross',
-      gender: 'female',
-      company: 'GRONK',
-      email: 'leonorcross@gronk.com',
+      enginer: 'server',
     });
   });
-
-  // fastify.get('/socket', { websocket: true }, (socket, _request) => {
-  //   socket.on('message', (strMessage) => {
-  //     const [messageType, messageBody] = JSON.parse(strMessage.toString());
-  //     if (messageType === 'join-room') {
-  //
-  //     } else if (messageType === 'move') {
-  //
-  //     } else if () {
-  //
-  //     }
-  //   });
-  // });
-
-  fastify.post(
-    '/join-room',
-    (
-      request: FastifyRequest<{
-        Body: {
-          playerId: string;
-          roomId?: string;
-        };
-      }>,
-      reply,
-    ) => {
-      const { playerId, roomId: requestedRoomId } = request.body;
-      const roomId = requestedRoomId ?? Math.random().toString(36).substring(7);
-
-      if (roomId in roomIdToState) {
-        const playerAssignment = roomIdToState[roomId].addNewPlayer(playerId);
-        if (playerAssignment.isErr()) {
-          reply.code(400).send({
-            error: 'Room is full',
-            roomId,
-            playerAssignment: null,
-            engine: 'server',
-          });
-          return;
-        }
-        reply.send({
-          playerId,
-          roomId,
-          playerAssignment: playerAssignment.unwrapOr(null),
-          engine: 'server',
-        });
-        roomIdToState[roomId].start();
-        return;
-      }
-
-      roomIdToState[roomId] = new GameState(playerId);
-
-      reply.send({
-        playerId,
-        roomId,
-        playerAssignment: 'left',
-        enginer: 'server',
-      });
-    },
-  );
-
-  fastify.get(
-    '/state',
-    (request: FastifyRequest<{ Querystring: { roomId: string } }>, reply) => {
-      const { roomId } = request.query;
-      const state = roomIdToState[roomId];
-      if (!state) {
-        reply.code(400).send({
-          error: 'Room not found',
-        });
-        return;
-      }
-      reply.send(state.getPlainState());
-    },
-  );
 
   fastify.get(
     '/state-sse',
