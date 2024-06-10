@@ -196,6 +196,7 @@ const precachedAssets = [
   '/fonts/bit5x3/bit5x3.ttf',
   '/fonts/bit5x3/bit5x3.woff',
   '/fonts/bit5x3/bit5x3.woff2',
+  '/',
   '/game.html',
   '/index.js',
   '/style.css',
@@ -244,7 +245,9 @@ self.addEventListener('fetch', (event) => {
     `INSPECTED REQUEST: ${url.href}${isPrecachedRequest ? ' (PRECACHED)' : ''}`,
   );
 
-  if (isPrecachedRequest) {
+  if (url.pathname === '/') {
+    event.respondWith(Response.redirect('/game.html', 301));
+  } else if (isPrecachedRequest) {
     console.log(url);
     // // Grab the precached asset from the cache
     // event.respondWith(

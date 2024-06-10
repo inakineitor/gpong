@@ -14,5 +14,6 @@ export default async function router(fastify: FastifyInstance) {
     root: path.join(__dirname, '../static'),
     prefix: '/',
   });
+  fastify.get('/', (_request, reply) => reply.redirect(301, '/game.html'));
   fastify.register(gameController, { prefix: '/game' });
 }
