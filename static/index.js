@@ -70,7 +70,8 @@ const sendMovementUpdate = async (roomId, playerId, isStarting, direction) => {
 };
 
 /* Server Connection Logic */
-const SERVER_URL = 'http://localhost:3006/game';
+const currentUrl = new URL(window.location.href);
+const SERVER_URL = `${currentUrl.origin}/game`;
 
 const canvas = document.getElementById('board');
 const context = canvas.getContext('2d');
