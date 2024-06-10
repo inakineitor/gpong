@@ -78,8 +78,8 @@ class GameState {
     if (this.paddles.right.y !== this.ball.position.y) {
       this.paddles.right.dy =
         this.paddles.right.y < this.ball.position.y
-          ? PADDLE_SPEED
-          : -PADDLE_SPEED;
+          ? PADDLE_SPEED / 2
+          : -PADDLE_SPEED / 2;
     }
 
     // Move paddles by their velocity
@@ -233,6 +233,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+let gameState;
 self.addEventListener('fetch', (event) => {
   // Is this one of our precached assets?
   const url = new URL(event.request.url);
@@ -285,7 +286,9 @@ self.addEventListener('fetch', (event) => {
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
         });
-        const gameState = new GameState();
+        if (!gameState) {
+          gameState = new GameState();
+        }
         const getCurrentStateEvent = () =>
           eventToString({
             event: 'state-update',
@@ -295,46 +298,39 @@ self.addEventListener('fetch', (event) => {
         const responseStream = new ReadableStream({
           async start(controller) {
             controller.enqueue(eventToString(joinedRoomEvent));
-            controller.enqueue(getCurrentStateEvent());
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            controller.enqueue(getCurrentStateEvent());
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            controller.enqueue(getCurrentStateEvent());
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            controller.enqueue(getCurrentStateEvent());
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            controller.enqueue(getCurrentStateEvent());
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            controller.enqueue(getCurrentStateEvent());
-            controller.close();
 
-            // interval = setInterval(() => {
-            //   const plainState = gameState.getPlainState();
-            //   controller.enqueue(
-            //     eventToString({ event: 'state-update', data: plainState }),
-            //   );
-            // }, 17);
+            interval = setInterval(() => {
+              controller.enqueue(getCurrentStateEvent());
+            }, 17);
           },
-          // cancel(controller) {
-          //   // clearInterval(interval);
-          //   controller.enqueue(eventToString({ event: 'close' }));
-          //   controller.close();
-          // },
+          cancel(controller) {
+            clearInterval(interval);
+            controller.enqueue(eventToString({ event: 'close' }));
+            controller.close();
+          },
         });
-        let responseBody = eventToString(joinedRoomEvent);
-        for (let i = 0; i < 100; i++) {
-          responseBody += getCurrentStateEvent();
-        }
-        // const responseStream = ReadableStream.from([
-        //   eventToString(joinedRoomEvent),
-        //   getCurrentStateEvent(),
-        // ]);
         const response = new Response(responseStream, {
           headers,
         });
         return response;
       }),
     );
+  } else if (url.pathname === '/game/movement') {
+    const bodyContent = new Response(event.request.body)
+      .json()
+      .then(({ isStarting, direction }) => {
+        if (!gameState) return;
+        const paddle = gameState.paddles.left;
+        if (isStarting) {
+          if (direction === 'up') {
+            paddle.dy = -PADDLE_SPEED;
+          } else if (direction === 'down') {
+            paddle.dy = PADDLE_SPEED;
+          }
+        } else {
+          paddle.dy = 0;
+        }
+      });
   } else {
     console.log(url);
     // Go to the network
