@@ -91,7 +91,7 @@ class GameState {
     },
     isResetting: false,
   };
-  engine = 'server';
+  engine = 'offline';
 
   constructor(leftPlayerId?: string) {
     this.paddles.left.playerId = leftPlayerId;
@@ -205,8 +205,13 @@ class GameState {
     return {
       paddles: this.paddles,
       ball: this.ball,
+      engine: this.engine,
     };
   }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export default async function gameController(fastify: FastifyInstance) {
@@ -296,6 +301,36 @@ export default async function gameController(fastify: FastifyInstance) {
         return;
       }
       reply.send(state.getPlainState());
+    },
+  );
+
+  fastify.get(
+    '/state-sse',
+    (request: FastifyRequest<{ Querystring: { roomId: string } }>, reply) => {
+      const { roomId } = request.query;
+      const state = roomIdToState[roomId];
+      if (!state) {
+        reply.code(400).send({
+          error: 'Room not found',
+        });
+        return;
+      }
+
+      reply.sse(
+        (async function* source() {
+          while (true) {
+            await sleep(17);
+            yield {
+              event: 'state-update',
+              data: JSON.stringify(state.getPlainState()),
+            };
+          }
+        })(),
+      );
+
+      request.socket.on('close', () => {
+        console.log('Connection closed');
+      });
     },
   );
 

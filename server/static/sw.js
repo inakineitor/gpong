@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
     console.log(`Responding from cache: ${event.request.url}`);
     // Grab the precached asset from the cache
     event.respondWith(
-      caches.open(cacheName).then((cache) => {
+      caches.open(cacheKey).then((cache) => {
         return cache.match(event.request.url);
       }),
     );

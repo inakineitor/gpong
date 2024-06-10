@@ -77,19 +77,76 @@ console.log('HELLO');
 const canvas = document.getElementById('board');
 const context = canvas.getContext('2d');
 
+const renderGameState = (gameState) => {
+  context.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+
+  // Draw paddles
+  context.fillStyle = '#4285f4';
+  context.fillRect(
+    LEFT_PADDLE_STARTING_X,
+    gameState.paddles.left.y,
+    PADDLE_WIDTH,
+    PADDLE_HEIGHT,
+  );
+  context.fillStyle = '#ea4335';
+  context.fillRect(
+    RIGHT_PADDLE_STARTING_X,
+    gameState.paddles.right.y,
+    PADDLE_WIDTH,
+    PADDLE_HEIGHT,
+  );
+
+  // Draw ball
+  context.fillStyle = '#fbbc05';
+  context.fillRect(
+    gameState.ball.position.x,
+    gameState.ball.position.y,
+    BALL_WIDTH,
+    BALL_HEIGHT,
+  );
+
+  // Draw walls
+  context.fillStyle = 'lightgrey';
+  context.fillRect(0, 0, BOARD_WIDTH, GRID_SIZE);
+  context.fillRect(0, BOARD_HEIGHT - GRID_SIZE, BOARD_WIDTH, BOARD_HEIGHT);
+
+  // Draw dotted line down the middle
+  for (let i = GRID_SIZE; i < BOARD_HEIGHT - GRID_SIZE; i += GRID_SIZE * 2) {
+    context.fillRect(BOARD_WIDTH / 2 - GRID_SIZE / 2, i, GRID_SIZE, GRID_SIZE);
+  }
+
+  // Set message
+  const waitingForPlayer =
+    gameState.paddles.left.playerId === undefined ||
+    gameState.paddles.right.playerId === undefined;
+  const message = waitingForPlayer
+    ? 'Waiting for second player'
+    : 'Game Started';
+  messageElement.innerHTML = message;
+
+  // Set scores
+  leftScoreElement.innerHTML = gameState.paddles.left.score;
+  rightScoreElement.innerHTML = gameState.paddles.right.score;
+
+  // Set backgournd
+  if (gameState.engine === 'offline') {
+    offlineBackgroundElement.style.visibility = 'visible';
+  }
+};
+
 onload = async () => {
   // Is service worker available?
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-      .register('/sw.js')
-      .then(() => {
-        console.log('Service worker registered!');
-      })
-      .catch((error) => {
-        console.warn('Error registering service worker:');
-        console.warn(error);
-      });
-  }
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker
+  //     .register('/sw.js')
+  //     .then(() => {
+  //       console.log('Service worker registered!');
+  //     })
+  //     .catch((error) => {
+  //       console.warn('Error registering service worker:');
+  //       console.warn(error);
+  //     });
+  // }
 
   const roomCode = getRoomCode();
   const playerId = Math.random().toString(36).substring(7);
@@ -132,10 +189,6 @@ onload = async () => {
     rightKeymapsElement.style.visibility = 'visible';
   }
 
-  if (engine === 'offline') {
-    offlineBackgroundElement.style.visibility = 'visible';
-  }
-
   const makeKeyEventHandler = (isStarting) => async (event) => {
     const direction =
       event.code === upKeyCode
@@ -153,71 +206,24 @@ onload = async () => {
   // listen to keyboard events to stop the paddle if key is released
   document.addEventListener('keyup', makeKeyEventHandler(false));
 
-  const func = async () => {
-    const gameStateRes = await fetch(`${SERVER_URL}/state?roomId=${roomId}`);
-    const gameState = await gameStateRes.json();
-    // console.log(json);
+  const eventSource = new EventSource(
+    `${SERVER_URL}/state-sse?roomId=${roomId}`,
+  );
 
-    context.clearRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
+  eventSource.addEventListener('state-update', (event) => {
+    const gameState = JSON.parse(event.data);
+    requestAnimationFrame(() => renderGameState(gameState));
+  });
 
-    // Draw paddles
-    context.fillStyle = '#4285f4';
-    context.fillRect(
-      LEFT_PADDLE_STARTING_X,
-      gameState.paddles.left.y,
-      PADDLE_WIDTH,
-      PADDLE_HEIGHT,
-    );
-    context.fillStyle = '#ea4335';
-    context.fillRect(
-      RIGHT_PADDLE_STARTING_X,
-      gameState.paddles.right.y,
-      PADDLE_WIDTH,
-      PADDLE_HEIGHT,
-    );
-
-    // Draw ball
-    context.fillStyle = '#fbbc05';
-    context.fillRect(
-      gameState.ball.position.x,
-      gameState.ball.position.y,
-      BALL_WIDTH,
-      BALL_HEIGHT,
-    );
-
-    // Draw walls
-    context.fillStyle = 'lightgrey';
-    context.fillRect(0, 0, BOARD_WIDTH, GRID_SIZE);
-    context.fillRect(0, BOARD_HEIGHT - GRID_SIZE, BOARD_WIDTH, BOARD_HEIGHT);
-
-    // Draw dotted line down the middle
-    for (let i = GRID_SIZE; i < BOARD_HEIGHT - GRID_SIZE; i += GRID_SIZE * 2) {
-      context.fillRect(
-        BOARD_WIDTH / 2 - GRID_SIZE / 2,
-        i,
-        GRID_SIZE,
-        GRID_SIZE,
-      );
-    }
-
-    // Set message
-    const waitingForPlayer =
-      gameState.paddles.left.playerId === undefined ||
-      gameState.paddles.right.playerId === undefined;
-    const message = waitingForPlayer
-      ? 'Waiting for second player'
-      : 'Game Started';
-    messageElement.innerHTML = message;
-
-    // Set scores
-    leftScoreElement.innerHTML = gameState.paddles.left.score;
-    rightScoreElement.innerHTML = gameState.paddles.right.score;
-
-    requestAnimationFrame(func);
-    // setTimeout(func, 5);
-  };
-
-  requestAnimationFrame(func);
+  // const func = async () => {
+  //   const gameStateRes = await fetch(`${SERVER_URL}/state?roomId=${roomId}`);
+  //   const gameState = await gameStateRes.json();
+  //   renderGameState(gameState);
+  //
+  //   requestAnimationFrame(func);
+  // };
+  //
+  // requestAnimationFrame(func);
 
   // const webSocket = new WebSocket('wss://echo.websocket.org/.hehe');
   //
