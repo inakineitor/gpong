@@ -72,8 +72,6 @@ const sendMovementUpdate = async (roomId, playerId, isStarting, direction) => {
 /* Server Connection Logic */
 const SERVER_URL = 'http://localhost:3006/game';
 
-console.log('HELLO');
-
 const canvas = document.getElementById('board');
 const context = canvas.getContext('2d');
 
@@ -127,14 +125,9 @@ const renderGameState = (gameState) => {
   // Set scores
   leftScoreElement.innerHTML = gameState.paddles.left.score;
   rightScoreElement.innerHTML = gameState.paddles.right.score;
-
-  // Set backgournd
-  if (gameState.engine === 'offline') {
-    offlineBackgroundElement.style.visibility = 'visible';
-  }
 };
 
-const setUpGame = ({ error, roomId, playerAssignment, playerId }) => {
+const setUpGame = ({ error, roomId, playerAssignment, playerId, engine }) => {
   if (error) {
     alert('This room is full. However, you can expectate the game.');
     // return;
@@ -173,27 +166,36 @@ const setUpGame = ({ error, roomId, playerAssignment, playerId }) => {
 
   // listen to keyboard events to stop the paddle if key is released
   document.addEventListener('keyup', makeKeyEventHandler(false));
+
+  // Set background
+  if (engine === 'offline') {
+    offlineBackgroundElement.style.visibility = 'visible';
+  }
 };
 
 onload = async () => {
   // Is service worker available?
-  // if ('serviceWorker' in navigator) {
-  //   navigator.serviceWorker
-  //     .register('/sw.js')
-  //     .then(() => {
-  //       console.log('Service worker registered!');
-  //     })
-  //     .catch((error) => {
-  //       console.warn('Error registering service worker:');
-  //       console.warn(error);
-  //     });
-  // }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then(() => {
+        console.log('Service worker registered!');
+      })
+      .catch((error) => {
+        console.warn('Error registering service worker:');
+        console.warn(error);
+      });
+    navigator.serviceWorker.ready.then((registration) => {
+      console.log('Updating service worker!');
+      registration.update();
+    });
+  }
 
   const roomCode = getRoomCode();
   const playerId = Math.random().toString(36).substring(7);
 
-  console.log(`INTIAL ROOM CODE: ${roomCode}`);
-  console.log(roomCode ? { roomCode, playerId } : { playerId });
+  // console.log(`INTIAL ROOM CODE: ${roomCode}`);
+  // console.log(roomCode ? { roomCode, playerId } : { playerId });
 
   const eventSource = new EventSource(
     `${SERVER_URL}/state-sse?playerId=${playerId}${roomCode ? `&roomId=${roomCode}` : ''}`,
@@ -202,8 +204,6 @@ onload = async () => {
   eventSource.addEventListener('joined-room', (event) => {
     const eventData = JSON.parse(event.data);
     setUpGame(eventData);
-    // console.log('JOINED ROOM EVENT');
-    // console.log(data);
   });
 
   eventSource.addEventListener('state-update', (event) => {

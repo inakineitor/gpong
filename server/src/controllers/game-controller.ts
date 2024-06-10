@@ -91,7 +91,7 @@ class GameState {
     },
     isResetting: false,
   };
-  engine = 'offline';
+  engine = 'server';
 
   constructor() {
     this.start();
@@ -247,7 +247,7 @@ export default async function gameController(fastify: FastifyInstance) {
   // GET /api/v1/user
   fastify.get('/', async function (_request, reply) {
     reply.send({
-      enginer: 'server',
+      engine: 'server',
     });
   });
 
