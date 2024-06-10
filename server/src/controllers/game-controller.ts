@@ -262,32 +262,20 @@ export default async function gameController(fastify: FastifyInstance) {
       const { playerId, roomId: requestedRoomId } = request.query;
       const roomId = requestedRoomId ?? Math.random().toString(36).substring(7);
 
-      if (roomId in roomIdToState) {
-        const playerAssignment = roomIdToState[roomId].addNewPlayer(playerId);
-        reply.sse({
-          event: 'joined-room',
-          data: JSON.stringify({
-            error: playerAssignment.isErr() ? 'Room is full' : undefined,
-            playerId,
-            roomId,
-            playerAssignment: playerAssignment.unwrapOr(null),
-            engine: 'server',
-          }),
-        });
-      } else {
+      if (!(roomId in roomIdToState)) {
         roomIdToState[roomId] = new GameState();
-        roomIdToState[roomId].addNewPlayer(playerId);
-
-        reply.sse({
-          event: 'joined-room',
-          data: JSON.stringify({
-            playerId,
-            roomId,
-            playerAssignment: 'left',
-            engine: 'server',
-          }),
-        });
       }
+      const playerAssignment = roomIdToState[roomId].addNewPlayer(playerId);
+      reply.sse({
+        event: 'joined-room',
+        data: JSON.stringify({
+          error: playerAssignment.isErr() ? 'Room is full' : undefined,
+          playerId,
+          roomId,
+          playerAssignment: playerAssignment.unwrapOr(null),
+          engine: 'server',
+        }),
+      });
 
       const state = roomIdToState[roomId];
 
