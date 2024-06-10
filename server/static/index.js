@@ -134,37 +134,7 @@ const renderGameState = (gameState) => {
   }
 };
 
-onload = async () => {
-  // Is service worker available?
-  // if ('serviceWorker' in navigator) {
-  //   navigator.serviceWorker
-  //     .register('/sw.js')
-  //     .then(() => {
-  //       console.log('Service worker registered!');
-  //     })
-  //     .catch((error) => {
-  //       console.warn('Error registering service worker:');
-  //       console.warn(error);
-  //     });
-  // }
-
-  const roomCode = getRoomCode();
-  const playerId = Math.random().toString(36).substring(7);
-
-  console.log(`INTIAL ROOM CODE: ${roomCode}`);
-  console.log(roomCode ? { roomCode, playerId } : { playerId });
-
-  const res = await fetch(`${SERVER_URL}/join-room`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(
-      roomCode ? { roomId: roomCode, playerId } : { playerId },
-    ),
-  });
-
-  const { error, roomId, playerAssignment, engine } = await res.json();
+const setUpGame = ({ error, roomId, playerAssignment, playerId }) => {
   if (error) {
     alert('This room is full. However, you can expectate the game.');
     // return;
@@ -180,8 +150,6 @@ onload = async () => {
 
   const upKeyCode = playerAssignment === 'left' ? 'KeyW' : 'ArrowUp';
   const downKeyCode = playerAssignment === 'left' ? 'KeyS' : 'ArrowDown';
-
-  console.log(res.headers);
 
   if (playerAssignment === 'left') {
     leftKeymapsElement.style.visibility = 'visible';
@@ -205,10 +173,52 @@ onload = async () => {
 
   // listen to keyboard events to stop the paddle if key is released
   document.addEventListener('keyup', makeKeyEventHandler(false));
+};
+
+onload = async () => {
+  // Is service worker available?
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker
+  //     .register('/sw.js')
+  //     .then(() => {
+  //       console.log('Service worker registered!');
+  //     })
+  //     .catch((error) => {
+  //       console.warn('Error registering service worker:');
+  //       console.warn(error);
+  //     });
+  // }
+
+  const roomCode = getRoomCode();
+  const playerId = Math.random().toString(36).substring(7);
+
+  console.log(`INTIAL ROOM CODE: ${roomCode}`);
+  console.log(roomCode ? { roomCode, playerId } : { playerId });
+
+  // const res = await fetch(`${SERVER_URL}/join-room`, {
+  //   method: 'POST',
+  //   headers: {
+  //     'Content-Type': 'application/json',
+  //   },
+  //   body: JSON.stringify(
+  //     roomCode ? { roomId: roomCode, playerId } : { playerId },
+  //   ),
+  // });
+  //
+  // const { error, roomId, playerAssignment } = await res.json();
+  //
+  // setUpGame({ error, roomId, playerAssignment, playerId });
 
   const eventSource = new EventSource(
-    `${SERVER_URL}/state-sse?roomId=${roomId}`,
+    `${SERVER_URL}/state-sse?playerId=${playerId}${roomCode ? `&roomId=${roomCode}` : ''}`,
   );
+
+  eventSource.addEventListener('joined-room', (event) => {
+    const eventData = JSON.parse(event.data);
+    setUpGame(eventData);
+    // console.log('JOINED ROOM EVENT');
+    // console.log(data);
+  });
 
   eventSource.addEventListener('state-update', (event) => {
     const gameState = JSON.parse(event.data);
