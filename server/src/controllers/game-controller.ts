@@ -93,9 +93,7 @@ class GameState {
   };
   engine = 'offline';
 
-  constructor(leftPlayerId?: string) {
-    this.paddles.left.playerId = leftPlayerId;
-
+  constructor() {
     this.start();
   }
 
@@ -266,29 +264,19 @@ export default async function gameController(fastify: FastifyInstance) {
 
       if (roomId in roomIdToState) {
         const playerAssignment = roomIdToState[roomId].addNewPlayer(playerId);
-        if (playerAssignment.isErr()) {
-          reply.sse({
-            event: 'joined-room',
-            data: JSON.stringify({
-              error: 'Room is full',
-              roomId,
-              playerAssignment: null,
-              engine: 'server',
-            }),
-          });
-        } else {
-          reply.sse({
-            event: 'joined-room',
-            data: JSON.stringify({
-              playerId,
-              roomId,
-              playerAssignment: playerAssignment.unwrapOr(null),
-              engine: 'server',
-            }),
-          });
-        }
+        reply.sse({
+          event: 'joined-room',
+          data: JSON.stringify({
+            error: playerAssignment.isErr() ? 'Room is full' : undefined,
+            playerId,
+            roomId,
+            playerAssignment: playerAssignment.unwrapOr(null),
+            engine: 'server',
+          }),
+        });
       } else {
-        roomIdToState[roomId] = new GameState(playerId);
+        roomIdToState[roomId] = new GameState();
+        roomIdToState[roomId].addNewPlayer(playerId);
 
         reply.sse({
           event: 'joined-room',
